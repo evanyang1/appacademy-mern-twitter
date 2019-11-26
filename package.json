@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "server": "nodemon app.js"
+    "server:debug": "nodemon --inspect app.js",
+    "server": "nodemon app.js",
+    "start": "node app.js"
   },
   "repository": {
     "type": "git",
