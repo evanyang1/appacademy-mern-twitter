@@ -3,6 +3,10 @@ const router = express.Router()
 const bcrypt = require('bcryptjs')
 const User = require('../../models/User');
 const jwt = require('jsonwebtoken')
+const passport = require('passport')
+const keys = require('../../config/keys')
+const validateRegisterInput = require('../../validation/register')
+const validateLoginInput = require('../../validation/login')
 
 router.post("/register", (req, res) => {
     const { errors, isValid } = validateRegisterInput(req.body);
@@ -17,7 +21,7 @@ router.post("/register", (req, res) => {
         return res.status(400).json(errors);
       } else {
         const newUser = new User({
-          name: req.body.name,
+          handle: req.body.handle,
           email: req.body.email,
           password: req.body.password
         });
@@ -50,20 +54,19 @@ router.post("/login", (req, res) => {
   
     if (!isValid) {
       return res.status(400).json(errors);
-    }
+    } 
   
-    const name = req.body.name;
+    const email = req.body.email;
     const password = req.body.password;
   
-    User.findOne({ name }).then(user => {
+    User.findOne({ email }).then(user => {
       if (!user) {
-        errors.name = "This user does not exist";
-        return res.status(400).json(errors);
+        return res.status(400).json({ email: "This user does not exist"});
       }
   
       bcrypt.compare(password, user.password).then(isMatch => {
         if (isMatch) {
-          const payload = { id: user.id, name: user.name };
+          const payload = { id: user.id, handle: user.handle, email: user.email };
   
           jwt.sign(payload, keys.secretOrKeys, { expiresIn: 3600 }, (err, token) => {
             res.json({
@@ -78,5 +81,14 @@ router.post("/login", (req, res) => {
       });
     });
 });
+
+// You may want to start commenting in information about your routes so that you can find the appropriate ones quickly.
+router.get('/current', passport.authenticate('jwt', {session: false}), (req, res) => {
+  res.json({
+    id: req.user.id,
+    handle: req.user.handle,
+    email: req.user.email
+  });
+})
 
 module.exports = router
